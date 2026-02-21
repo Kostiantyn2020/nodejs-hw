@@ -1,6 +1,20 @@
+import createHttpError from 'http-errors';
 export const errorHandler = (err, req, res, next) => {
-  const statusCode = err.statusCode || 500;
-  res.status(statusCode).json({
-    message: err.message || 'Internal Server Error',
+  let status = 500;
+  let message = 'Internal Server Error';
+
+  if (createHttpError.isHttpError(err)) {
+    status = err.status;
+    message = err.message;
+  } else if (err.status) {
+    status = err.status;
+    message = err.message;
+  } else if (err.name === 'ValidationError') {
+    status = 400;
+    message = err.message;
+  }
+
+  res.status(status).json({
+    message,
   });
 };

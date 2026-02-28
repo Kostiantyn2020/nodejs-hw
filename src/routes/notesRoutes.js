@@ -1,4 +1,12 @@
 import express from 'express';
+import { celebrate } from 'celebrate';
+import {
+  getAllNotesSchema,
+  noteIdSchema,
+  createNoteSchema,
+  updateNoteSchema,
+} from '../validations/notesValidation.js';
+
 import {
   getAllNotes,
   getNoteById,
@@ -9,18 +17,14 @@ import {
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
-  res.json({ message: 'Notes route works' });
-});
+router.get('/', celebrate(getAllNotesSchema), getAllNotes);
 
-router.get('/notes', getAllNotes);
+router.get('/:noteId', celebrate(noteIdSchema), getNoteById);
 
-router.get('/notes/:noteId', getNoteById);
+router.post('/', celebrate(createNoteSchema), createNote);
 
-router.post('/notes', createNote);
+router.patch('/:noteId', celebrate(updateNoteSchema), updateNote);
 
-router.delete('/notes/:noteId', deleteNote);
-
-router.patch('/notes/:noteId', updateNote);
+router.delete('/:noteId', celebrate(noteIdSchema), deleteNote);
 
 export default router;

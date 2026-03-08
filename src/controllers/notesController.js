@@ -16,9 +16,36 @@ export const createNote = async (req, res, next) => {
 
 export const getAllNotes = async (req, res, next) => {
   try {
-    const notes = await Note.find({ userId: req.user._id });
+    const { page = 1, perPage = 10, tag, search } = req.query;
 
-    res.status(200).json(notes);
+    const pageNumber = Number(page);
+    const perPageNumber = Number(perPage);
+
+    const filter = { userId: req.user._id };
+
+    if (tag) {
+      filter.tags = tag;
+    }
+
+    if (search) {
+      filter.$text = { $search: search };
+    }
+
+    const totalNotes = await Note.countDocuments(filter);
+
+    const notes = await Note.find(filter)
+      .skip((pageNumber - 1) * perPageNumber)
+      .limit(perPageNumber);
+
+    const totalPages = Math.ceil(totalNotes / perPageNumber);
+
+    res.status(200).json({
+      page: pageNumber,
+      perPage: perPageNumber,
+      totalPages,
+      totalNotes,
+      notes,
+    });
   } catch (error) {
     next(error);
   }
@@ -74,7 +101,7 @@ export const deleteNote = async (req, res, next) => {
       throw createHttpError(404, 'Note not found');
     }
 
-    res.status(204).send();
+    res.status(200).json(note);
   } catch (error) {
     next(error);
   }

@@ -1,11 +1,6 @@
 import express from 'express';
-import { celebrate } from 'celebrate';
-import {
-  getAllNotesSchema,
-  noteIdSchema,
-  createNoteSchema,
-  updateNoteSchema,
-} from '../validations/notesValidation.js';
+
+import { authenticate } from '../middleware/authenticate.js';
 
 import {
   getAllNotes,
@@ -17,14 +12,16 @@ import {
 
 const router = express.Router();
 
-router.get('/', celebrate(getAllNotesSchema), getAllNotes);
+router.use(authenticate);
 
-router.get('/:noteId', celebrate(noteIdSchema), getNoteById);
+router.get('/', getAllNotes);
 
-router.post('/', celebrate(createNoteSchema), createNote);
+router.get('/:noteId', getNoteById);
 
-router.patch('/:noteId', celebrate(updateNoteSchema), updateNote);
+router.post('/', createNote);
 
-router.delete('/:noteId', celebrate(noteIdSchema), deleteNote);
+router.patch('/:noteId', updateNote);
+
+router.delete('/:noteId', deleteNote);
 
 export default router;

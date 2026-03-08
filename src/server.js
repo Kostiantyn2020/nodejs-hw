@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { errors } from 'celebrate';
+import cookieParser from 'cookie-parser';
 
 import { connectMongoDB } from './db/connectMongoDB.js';
 
@@ -16,6 +17,7 @@ const PORT = process.env.PORT ?? 3000;
 const startServer = async () => {
   await connectMongoDB();
 
+  app.use(cookieParser());
   app.use(logger);
   app.use(express.json());
   app.use(cors());

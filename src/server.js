@@ -11,6 +11,7 @@ import { notFoundHandler } from './middleware/notFoundHandler.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import notesRoutes from './routes/notesRoutes.js';
 import authRoutes from './routes/authRoutes.js';
+import userRoutes from './routes/userRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT ?? 3000;
@@ -32,8 +33,16 @@ const startServer = async () => {
 
   app.use(errorHandler);
 
+  app.use('/users', userRoutes);
+
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
   });
 };
+
+app.use((req, res) => {
+  res.status(404).json({
+    message: 'Route not found',
+  });
+});
 startServer();

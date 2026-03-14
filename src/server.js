@@ -26,23 +26,17 @@ const startServer = async () => {
 
   app.use(authRoutes);
   app.use(notesRoutes);
-
-  app.use(notFoundHandler);
+  app.use(userRoutes);
 
   app.use(errors());
 
-  app.use(errorHandler);
+  app.use(notFoundHandler);
 
-  app.use('/users', userRoutes);
+  app.use(errorHandler);
 
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
   });
 };
 
-app.use((req, res) => {
-  res.status(404).json({
-    message: 'Route not found',
-  });
-});
 startServer();

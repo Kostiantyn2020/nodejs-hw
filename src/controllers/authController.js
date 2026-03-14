@@ -6,7 +6,10 @@ import handlebars from 'handlebars';
 import createHttpError from 'http-errors';
 
 import { User } from '../models/user.js';
+import { Session } from '../models/session.js';
 import { sendEmail } from '../utils/sendMail.js';
+import { createSession } from '../utils/createSession.js';
+import { setSessionCookies } from '../utils/setSessionCookies.js';
 
 export const registerUser = async (req, res, next) => {
   try {
@@ -15,7 +18,7 @@ export const registerUser = async (req, res, next) => {
     const existingUser = await User.findOne({ email });
 
     if (existingUser) {
-      throw createHttpError(409, 'Email in use');
+      throw createHttpError(400, 'Email already in use');
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -25,6 +28,8 @@ export const registerUser = async (req, res, next) => {
       password: hashedPassword,
     });
 
+    const session = await createSession(user._id);
+    setSessionCookies(res, session);
     res.status(201).json({
       user: {
         id: user._id,
@@ -52,12 +57,71 @@ export const loginUser = async (req, res, next) => {
       throw createHttpError(401, 'Email or password is wrong');
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: '24h',
-    });
+    await Session.deleteMany({ userId: user._id });
 
-    res.json({
-      token,
+    const session = await createSession(user._id);
+
+    setSessionCookies(res, session);
+
+    res.status(200).json({
+      user: {
+        id: user._id,
+        email: user.email,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const logoutUser = async (req, res, next) => {
+  try {
+    const { sessionId } = req.cookies;
+
+    if (sessionId) {
+      await Session.deleteOne({ _id: sessionId });
+    }
+
+    res.clearCookie('sessionId');
+    res.clearCookie('accessToken');
+    res.clearCookie('refreshToken');
+
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const refreshUserSession = async (req, res, next) => {
+  try {
+    const { sessionId, refreshToken } = req.cookies;
+
+    if (!sessionId || !refreshToken) {
+      throw createHttpError(401, 'Session not found');
+    }
+
+    const session = await Session.findById(sessionId);
+
+    if (!session) {
+      throw createHttpError(401, 'Session not found');
+    }
+
+    if (session.refreshToken !== refreshToken) {
+      throw createHttpError(401, 'Invalid refresh token');
+    }
+
+    if (new Date() > session.refreshTokenValidUntil) {
+      throw createHttpError(401, 'Refresh token expired');
+    }
+
+    await Session.deleteOne({ _id: sessionId });
+
+    const newSession = await createSession(session.userId);
+
+    setSessionCookies(res, newSession);
+
+    res.status(200).json({
+      message: 'Session refreshed successfully',
     });
   } catch (error) {
     next(error);
@@ -105,6 +169,7 @@ export const requestResetEmail = async (req, res, next) => {
 
     try {
       await sendEmail({
+        from: process.env.SMTP_FROM,
         to: email,
         subject: 'Reset your password',
         html,
@@ -155,28 +220,6 @@ export const resetPassword = async (req, res, next) => {
 
     res.status(200).json({
       message: 'Password reset successfully',
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const logoutUser = async (req, res, next) => {
-  try {
-    res.status(204).send();
-  } catch (error) {
-    next(error);
-  }
-};
-export const refreshUserSession = async (req, res, next) => {
-  try {
-    const { _id, email } = req.user;
-
-    res.status(200).json({
-      user: {
-        id: _id,
-        email,
-      },
     });
   } catch (error) {
     next(error);

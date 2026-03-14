@@ -10,8 +10,13 @@ export const sendEmail = async (options) => {
     },
   });
 
-  await transporter.sendMail({
-    from: process.env.SMTP_FROM,
+  const emailOptions = {
     ...options,
-  });
+  };
+
+  if (!emailOptions.from && process.env.SMTP_FROM) {
+    emailOptions.from = process.env.SMTP_FROM;
+  }
+
+  return transporter.sendMail(emailOptions);
 };

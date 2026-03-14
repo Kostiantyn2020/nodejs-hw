@@ -4,6 +4,7 @@ import {
   registerUserSchema,
   loginUserSchema,
   requestResetEmailSchema,
+  resetPasswordSchema,
 } from '../validations/authValidation.js';
 import {
   registerUser,
@@ -11,10 +12,9 @@ import {
   refreshUserSession,
   logoutUser,
   requestResetEmail,
+  resetPassword,
 } from '../controllers/authController.js';
 
-import { resetPasswordSchema } from '../validations/authValidation.js';
-import { resetPassword } from '../controllers/authController.js';
 
 const router = express.Router();
 
@@ -27,14 +27,14 @@ router.post('/auth/refresh', refreshUserSession);
 router.post('/auth/logout', logoutUser);
 
 router.post(
-  '/request-reset-email',
+  '/auth/request-reset-email',
   celebrate({ body: requestResetEmailSchema }),
   requestResetEmail,
 );
 
 router.post(
-  '/reset-password',
-  celebrate({ body: resetPasswordSchema }),
+  '/auth/reset-password',
+  celebrate(resetPasswordSchema),
   resetPassword,
 );
 

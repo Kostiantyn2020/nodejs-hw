@@ -8,8 +8,8 @@ import createHttpError from 'http-errors';
 import { User } from '../models/user.js';
 import { Session } from '../models/session.js';
 import { sendEmail } from '../utils/sendMail.js';
-import { createSession } from '../utils/createSession.js';
-import { setSessionCookies } from '../utils/setSessionCookies.js';
+
+import { createSession, setSessionCookies } from '../services/auth.js';
 
 export const registerUser = async (req, res, next) => {
   try {
